@@ -1,5 +1,3 @@
-// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
-
 Shader "Unlit/ScreenspaceTexture"
 {
     Properties
@@ -57,6 +55,7 @@ Shader "Unlit/ScreenspaceTexture"
                 // sample the texture
                 float2 uv = (i.screenPos.xy / i.screenPos.z) * 0.5f + 0.5f;
 
+                uv.y = 1.0 - uv.y;
                 fixed4 col = tex2D(_MainTex, uv);
 
                 // apply fog

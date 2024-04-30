@@ -31,11 +31,16 @@ public class AU_PlayerController : MonoBehaviour
 
     void Update()
     {
+        
         movementInput = WASD.ReadValue<Vector2>();
-        if (movementInput.x != 0)
-        {
-            myAvatar.localScale = new Vector2(Mathf.Sign(movementInput.x), 1);
-        }
+        if (movementInput.x == 0) return;
+        var turn = Mathf.Sign(movementInput.x);
+        myAvatar.localScale = new Vector2(
+            Mathf.Approximately(Mathf.Sign(movementInput.x), Mathf.Sign(myAvatar.localScale.x)) ? myAvatar.localScale.x : -myAvatar.localScale.x, //approx tu supress warning
+            myAvatar.transform.localScale.y
+        );
+        
+        
     }
     private void FixedUpdate()
     {
