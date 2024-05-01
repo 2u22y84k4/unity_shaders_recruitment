@@ -9,42 +9,34 @@ public class lightcaster : MonoBehaviour
     [SerializeField] float getRadius;
     [SerializeField] LayerMask wallMask;
 
-    public Collider[] sceneObjects; //The objects in the scene to effect the lighting.
+    public Collider[] sceneObjects; 
 
-    private Mesh mesh; //The light mesh.
+    private Mesh mesh; 
 
     public int MaxDist;
 
-    public GameObject lightRays; //the light game object.
+    public GameObject lightRays; 
 
-    public float offset = 0.0001f; //the offset of the two rays cast to the left and right of each vertex of the scene objects.
-
-    public bool showRed; //For debugging: shows the red rays casted (the negative offset rays).
-    public bool showGreen; //For debugging: shows the green rays casted (the positive offset rays).
+    public float offset = 0.0001f; 
+    
+    //debug drawing
+    public bool showRed; 
+    public bool showGreen; 
 
     public struct angledVerts
-    { //used for updating the vertices and UVs of the light mesh. The angle variable is for properly sorting the ray hit points.
+    { 
         public Vector3 vert;
         public float angle;
         public Vector2 uv;
     }
 
-    // Use this for initialization
+    
     void Start()
     {
-        mesh = lightRays.GetComponent<MeshFilter>().mesh; //inits the mesh of the light.
-        //name = people.GetPerson<jacek>().name
+        mesh = lightRays.GetComponent<MeshFilter>().mesh; 
     }
 
-
-    /// <summary>
-    /// Adds three ints to the end of an int array.
-    /// </summary>
-    /// <param name="original"></param>
-    /// <param name="itemToAdd1"></param>
-    /// <param name="itemToAdd2"></param>
-    /// <param name="itemToAdd3"></param>
-    /// <returns></returns>
+    
     public static int[] AddItemsToArray(int[] original, int itemToAdd1, int itemToAdd2, int itemToAdd3)
     {
         int[] finalArray = new int[original.Length + 3];
@@ -58,12 +50,7 @@ public class lightcaster : MonoBehaviour
         return finalArray;
     }
 
-    /// <summary>
-    /// Adds two arrays together, making a third array.
-    /// </summary>
-    /// <param name="first"></param>
-    /// <param name="second"></param>
-    /// <returns></returns>
+
     public static Vector3[] ConcatArrays(Vector3[] first, Vector3[] second)
     {
         Vector3[] concatted = new Vector3[first.Length + second.Length];
@@ -73,51 +60,44 @@ public class lightcaster : MonoBehaviour
 
         return concatted;
     }
-
-    // Update is called once per frame
+    
     void Update()
     {
         GetWalls();
-        mesh.Clear(); //clears the mesh before changing it.
+        mesh.Clear(); 
 
-        // The next few lines create an array to store all vertices of all the scene objects that should react to the light.
-        Vector3[] objverts = sceneObjects[0].gameObject.GetComponent<MeshFilter>().mesh.vertices; //[asd][sdsa][123][asd]
+        Vector3[] objverts = sceneObjects[0].gameObject.GetComponent<MeshFilter>().mesh.vertices; 
+        
         for (int i = 1; i < sceneObjects.Length; i++)
         {
             objverts = ConcatArrays(objverts, sceneObjects[i].GetComponent<MeshFilter>().mesh.vertices);
-
         }
-        //[asdsdsa123asd]
-
-        //these lines (1) an array of structs which will be used to populate the light mesh and (2) the vertices and UVs to ultimately populate the mesh.
-        // (the "*2" is because there are twice as many rays casted as vertices, and the "+1" because the first point in the mesh should be the center of the light source)
+        
         angledVerts[] angleds = new angledVerts[(objverts.Length * 2)];
         Vector3[] verts = new Vector3[(objverts.Length * 2) + 1];
         Vector2[] uvs = new Vector2[(objverts.Length * 2) + 1];
 
 
-        //Store the vertex location and UV of the center of the light source in the first locations of verts and uvs.
         verts[0] = lightRays.transform.worldToLocalMatrix.MultiplyPoint3x4(this.transform.position);
         uvs[0] = new Vector2(lightRays.transform.worldToLocalMatrix.MultiplyPoint3x4(this.transform.position).x, lightRays.transform.worldToLocalMatrix.MultiplyPoint3x4(this.transform.position).y);
 
-        int h = 0; //a constantly increasing int to use to calculate the current location in the angleds struct array.
+        int h = 0; 
 
-        for (int j = 0; j < sceneObjects.Length; j++) //cycle through all scene objects.
+        for (int j = 0; j < sceneObjects.Length; j++) 
         {
-            for (int i = 0; i < sceneObjects[j].GetComponent<MeshFilter>().mesh.vertices.Length; i++) //cycle through all vertices in the current scene object.
+            for (int i = 0; i < sceneObjects[j].GetComponent<MeshFilter>().mesh.vertices.Length; i++) 
             {
-                Vector3 me = this.transform.position;// just to make the currents position shorter to reference.
-                Vector3 other = sceneObjects[j].transform.localToWorldMatrix.MultiplyPoint3x4(objverts[h]); //get the vertex location in world space coordinates.
+                Vector3 me = this.transform.position;
+                Vector3 other = sceneObjects[j].transform.localToWorldMatrix.MultiplyPoint3x4(objverts[h]); 
 
-                float angle1 = Mathf.Atan2(((other.y - me.y) - offset), ((other.x - me.x) - offset));// calculate the angle of the two offsets, to be stored in the structs.
+                float angle1 = Mathf.Atan2(((other.y - me.y) - offset), ((other.x - me.x) - offset));
                 float angle3 = Mathf.Atan2(((other.y - me.y) + offset), ((other.x - me.x) + offset));
 
-                RaycastHit hit; //create and fire the two rays from the center of the light source in the direction of the vertex, with offsets.
+                RaycastHit hit; 
                 Physics.Raycast(this.transform.position, new Vector2((other.x - me.x) - offset, (other.y - me.y) - offset), out hit, MaxDist, ~ignoreMe);
                 RaycastHit hit2;
                 Physics.Raycast(this.transform.position, new Vector2((other.x - me.x) + offset, (other.y - me.y) + offset), out hit2, MaxDist, ~ignoreMe);
-
-                //store the hit locations as vertices in the struct, in model coordinates, as well as the angle of the ray cast and the UV at the vertex.
+                
                 angleds[(h * 2)].vert = lightRays.transform.worldToLocalMatrix.MultiplyPoint3x4(hit.point);
                 angleds[(h * 2)].angle = angle1;
                 angleds[(h * 2)].uv = new Vector2(angleds[(h * 2)].vert.x, angleds[(h * 2)].vert.y);
@@ -126,15 +106,16 @@ public class lightcaster : MonoBehaviour
                 angleds[(h * 2) + 1].angle = angle3;
                 angleds[(h * 2) + 1].uv = new Vector2(angleds[(h * 2) + 1].vert.x, angleds[(h * 2) + 1].vert.y);
 
-                h++;//increment h.
-
-                if (showRed && hit.collider is not null)//for debugging: draw the rays cast.
+                h++;
+                
+                //execute debug drawing
+                if (hit.collider is not null)
                 {
-                    Debug.DrawLine(transform.position, hit.point, Color.red);
-                }
-                if (showGreen)
-                {
-                    Debug.DrawLine(transform.position, hit2.point, Color.green);
+                    if (showRed)
+                        Debug.DrawLine(transform.position, hit.point, Color.red);
+                    
+                    if (showGreen)
+                        Debug.DrawLine(transform.position, hit2.point, Color.green);
                 }
 
             }
@@ -142,41 +123,36 @@ public class lightcaster : MonoBehaviour
 
         Array.Sort(angleds, delegate (angledVerts one, angledVerts two) {
             return one.angle.CompareTo(two.angle);
-        });//sort the struct array of vertices from smallest angle to greatest.
+        });
 
-        for (int i = 0; i < angleds.Length; i++)//store the values in the struct array in verts and uvs. 
-        {                                       //(offsetting one because index 0 is the center of the light source and triangle fan)
+        for (int i = 0; i < angleds.Length; i++)
+        {                                       
             verts[i + 1] = angleds[i].vert;
             uvs[i + 1] = angleds[i].uv;
         }
 
-        mesh.vertices = verts; //update the actual mesh with the new vertices.
+        mesh.vertices = verts;
 
-        for (int i = 0; i < uvs.Length; i++)//offset all the UVs by .5 on both s and t to make the texture center be at the object center.
+        for (int i = 0; i < uvs.Length; i++)
         {
             uvs[i] = new Vector2(uvs[i].x + .5f, uvs[i].y + .5f);
         }
 
-        mesh.uv = uvs; //update the actual mesh with the new UVs.
+        mesh.uv = uvs; 
 
-        int[] triangles = { 0, 1, verts.Length - 1 }; //init the triangles array, starting with the last triangle to orient normals properly.
+        int[] triangles = { 0, 1, verts.Length - 1 }; 
 
-        for (int i = verts.Length - 1; i > 0; i--) //add all triangles to the triangle array, determined by three verts in the vertex array.
+        for (int i = verts.Length - 1; i > 0; i--) 
         {
             triangles = AddItemsToArray(triangles, 0, i, i - 1);
         }
-        //triangles = AddItemsToArray(triangles, 0, 1, 2);
 
-        mesh.triangles = triangles; //update the actual mesh with the new triangles.
+        mesh.triangles = triangles; 
     }
 
 
     void GetWalls()
     {
-
-
         sceneObjects = Physics.OverlapSphere(transform.position, getRadius, wallMask);
-
-
     }
 }

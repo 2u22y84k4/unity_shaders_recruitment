@@ -36,7 +36,8 @@ public class AU_PlayerController : MonoBehaviour
         if (movementInput.x == 0) return;
         var turn = Mathf.Sign(movementInput.x);
         myAvatar.localScale = new Vector2(
-            Mathf.Approximately(Mathf.Sign(movementInput.x), Mathf.Sign(myAvatar.localScale.x)) ? myAvatar.localScale.x : -myAvatar.localScale.x, //approx tu supress warning
+            Mathf.Approximately(Mathf.Sign(movementInput.x), Mathf.Sign(myAvatar.localScale.x)) ? //if x dir and input are different, turn player sprite around
+                myAvatar.localScale.x : -myAvatar.localScale.x, //approx tu supress warning
             myAvatar.transform.localScale.y
         );
         
